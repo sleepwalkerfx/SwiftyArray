@@ -28,7 +28,7 @@ public extension Array {
  
  - returns: An array with duplicate elements removed.
  */
-extension Array where Element: Equatable {
+public extension Array where Element: Equatable {
     func removingDuplicates() -> [Element] {
         var result = [Element]()
         for value in self {
