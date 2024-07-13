@@ -5,7 +5,6 @@
 //  Created by Rukshan on 13/07/2024.
 //
 import XCTest
-@testable import SwiftyArray
 
 class ArraySafeSubscriptTests: XCTestCase {
 

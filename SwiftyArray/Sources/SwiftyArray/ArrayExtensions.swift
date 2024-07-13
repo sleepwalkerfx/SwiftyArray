@@ -49,8 +49,9 @@ public extension Array where Element: Equatable {
  - parameter size: The maximum size of each chunk.
  - returns: An array of arrays, each containing elements from the original array.
  */
-extension Array {
+public extension Array {
     func chunked(into size: Int) -> [[Element]] {
+        guard size > 0 else { return [] }
         var chunks = [[Element]]()
         for i in stride(from: 0, to: count, by: size) {
             let chunk = Array(self[i..<Swift.min(i + size, count)])
@@ -61,33 +62,40 @@ extension Array {
 }
 
 /**
- Filter out non-nil values from an array of optionals.
- 
- This function removes `nil` values from an array of optionals, returning an array of non-optional values.
- 
- - returns: An array containing only non-nil values.
- */
-extension Array {
-    func compactMap<T>() -> [T] where Element == Optional<T> {
-        return self.compactMap { $0 }
-    }
-}
-
-/**
- Rotate the elements of the array by a specified distance.
+ Rotate the elements of the array left by a specified distance.
  
  This function rotates the elements of the array to the left or right based on the specified distance.
  
  - parameter distance: The distance by which to rotate the elements. A positive value rotates to the left; a negative value rotates to the right.
  - returns: The rotated array.
  */
-extension Array {
-    func rotated(by distance: Int) -> [Element] {
+public extension Array {
+    func rotatedLeft(by distance: Int) -> [Element] {
         guard !isEmpty else { return self }
         let adjustedDistance = distance % count
         if adjustedDistance == 0 { return self }
         let negativeDistance = adjustedDistance < 0 ? adjustedDistance + count : adjustedDistance
         let splitIndex = index(startIndex, offsetBy: negativeDistance)
+        return Array(self[splitIndex ..< endIndex] + self[startIndex ..< splitIndex])
+    }
+}
+
+/**
+ Rotate the elements of the array right by a specified distance.
+ 
+ This function rotates the elements of the array to the left or right based on the specified distance.
+ 
+ - parameter distance: The distance by which to rotate the elements. A positive value rotates to the left; a negative value rotates to the right.
+ - returns: The rotated array.
+ */
+
+public extension Array {
+    func rotatedRight(by distance: Int) -> [Element] {
+        guard !isEmpty else { return self }
+        let adjustedDistance = distance % count
+        if adjustedDistance == 0 { return self }
+        let positiveDistance = adjustedDistance < 0 ? adjustedDistance + count : adjustedDistance
+        let splitIndex = index(startIndex, offsetBy: count - positiveDistance)
         return Array(self[splitIndex ..< endIndex] + self[startIndex ..< splitIndex])
     }
 }
@@ -99,8 +107,9 @@ extension Array {
  
  - returns: `true` if the array is sorted in ascending order, `false` otherwise.
  */
-extension Array where Element: Comparable {
+public extension Array where Element: Comparable {
     func isSorted() -> Bool {
+        guard count > 0 else { return true }
         for i in 1..<count {
             if self[i] < self[i - 1] {
                 return false
@@ -118,8 +127,8 @@ extension Array where Element: Comparable {
  - parameter other: The array to merge with.
  - returns: A merged array containing unique elements from both arrays.
  */
-extension Array where Element: Equatable {
-    func merged(with other: [Element]) -> [Element] {
+public extension Array where Element: Equatable {
+    func mergedAvoidingDuplicates(with other: [Element]) -> [Element] {
         var result = self
         for element in other {
             if !result.contains(element) {
@@ -130,15 +139,61 @@ extension Array where Element: Equatable {
     }
 }
 
-/**
- Partition the array into two arrays based on a predicate.
- 
- This function partitions the elements of the array into two arrays based on whether they satisfy the given predicate.
- 
- - parameter predicate: A closure that takes an element as its argument and returns a Boolean value indicating which partition the element should belong to.
- - returns: A tuple containing two arrays: one with elements that satisfy the predicate, and one with elements that do not.
- */
-extension Array {
+/// Partitions the elements of the array into two arrays based on a predicate function.
+///
+/// This method splits the array into two arrays: one containing elements that satisfy
+/// the provided predicate, and another containing elements that do not. It is useful
+/// when you need to categorize elements based on a condition.
+///
+/// Here’s an example of how to partition an array of integers into even and odd numbers:
+///
+///     let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+///     let (evenNumbers, oddNumbers) = numbers.partitioned(by: { $0 % 2 == 0 })
+///     print(evenNumbers)
+///     // Prints "[2, 4, 6, 8]"
+///     print(oddNumbers)
+///     // Prints "[1, 3, 5, 7, 9]"
+///
+/// In this example, the predicate function `{ $0 % 2 == 0 }` checks if each number is even.
+/// As a result, `evenNumbers` contains all the even numbers from the original array, while
+/// `oddNumbers` contains all the odd numbers.
+///
+/// Here’s another example with an array of strings to demonstrate partitioning based on
+/// string content:
+///
+///     let words = ["apple", "banana", "cherry", "date"]
+///     let (wordsWithA, wordsWithoutA) = words.partitioned(by: { $0.contains("a") })
+///     print(wordsWithA)
+///     // Prints "["apple", "banana", "date"]"
+///     print(wordsWithoutA)
+///     // Prints "["cherry"]"
+///
+/// In this case, the predicate function `{ $0.contains("a") }` checks if a string contains
+/// the letter "a". `wordsWithA` includes all the strings that contain "a", while
+/// `wordsWithoutA` includes the remaining strings.
+///
+/// - Parameter predicate: A closure that takes an element of the array as its argument and
+///   returns a Boolean value indicating whether the element should be included in the
+///   `matching` array.
+///
+/// - Returns: A tuple containing two arrays: the first array includes elements that satisfy
+///   the predicate and the second array includes elements that do not.
+///
+/// - Complexity: O(*n*), where *n* is the number of elements in the array. The method
+///   traverses the array once to partition the elements.
+///
+/// Example usage with an empty array:
+///
+///     let emptyArray: [Int] = []
+///     let (matching, nonMatching) = emptyArray.partitioned(by: { $0 > 0 })
+///     print(matching)
+///     // Prints "[]"
+///     print(nonMatching)
+///     // Prints "[]"
+///
+/// In this case, both `matching` and `nonMatching` are empty arrays because there are no
+/// elements in the original array.
+public extension Array {
     func partitioned(by predicate: (Element) -> Bool) -> ([Element], [Element]) {
         var matching = [Element]()
         var nonMatching = [Element]()
@@ -161,7 +216,7 @@ extension Array {
  - returns: The sum of elements in the array.
  */
 extension Array where Element: Numeric {
-    func sum() -> Element {
+    @inlinable func sum() -> Element {
         return reduce(0, +)
     }
 }
@@ -174,7 +229,7 @@ extension Array where Element: Numeric {
  - returns: The transposed 2D array.
  */
 extension Array where Element: Collection, Element.Index == Int {
-    func transposed() -> [[Element.Element]] {
+    @inlinable func transposed() -> [[Element.Element]] {
         guard let firstRow = self.first else { return [] }
         return firstRow.indices.map { index in
             self.map { $0[index] }

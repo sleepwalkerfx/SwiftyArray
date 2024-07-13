@@ -6,7 +6,6 @@
 //
 
 import XCTest
-@testable import SwiftyArray
 
 class ArrayChunkedTests: XCTestCase {
     
